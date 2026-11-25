@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: audio_search
+      POSTGRES_USER: audio_search
+      POSTGRES_PASSWORD: audio_search
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports: ["9000:9000", "9001:9001"]
+    volumes: ["miniodata:/data"]
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports: ["5672:5672", "15672:15672"]
+
+  api:
+    build: ./api
+    depends_on: [postgres, minio, rabbitmq]
+    ports: ["8000:8000"]
+    env_file: .env
+
+  worker:
+    build: ./worker
+    depends_on: [postgres, minio, rabbitmq]
+    env_file: .env
+
+volumes:
+  pgdata:
+  miniodata:
